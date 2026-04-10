@@ -5,7 +5,7 @@ from src.preprocessing import (
     scale_features_and_target,
     create_sequences,
 )
-from src.models import build_cnn_model, build_rnn_model, build_lstm_model
+from src.models import build_cnn_model, build_rnn_model, build_lstm_model, build_transformer_model
 from src.train import train_and_evaluate_model, plot_loss_curve, plot_actual_vs_predicted
 
 
@@ -16,6 +16,8 @@ def get_model(model_name, input_shape, output_size):
         return build_rnn_model(input_shape, output_size)
     elif model_name == "lstm":
         return build_lstm_model(input_shape, output_size)
+    elif model_name == "transformer":
+        return build_transformer_model(input_shape, output_size)
     else:
         raise ValueError(f"Unsupported model name: {model_name}")
 
@@ -23,12 +25,12 @@ def get_model(model_name, input_shape, output_size):
 def main():
     set_seed(42)
 
-    model_name = "lstm"   # change this to "rnn" or "lstm"
+    model_name = "transformer"   # change this to "rnn" or "lstm"
     file_path = "data/raw/bitcoin.csv"
     feature_cols = ["Price", "Open", "High", "Low", "Vol.", "Change %"]
     target_col = "Price"
     window_size = 60
-    horizon = 7
+    horizon = 1
 
     print("Loading dataset...")
     df = load_and_clean_data(file_path)
@@ -69,6 +71,11 @@ def main():
     )
     model.summary()
 
+    if model_name == "transformer":
+        epochs = 50
+    else:
+        epochs = 30
+
     print(f"\nTraining {model_name.upper()} model...")
     history, y_test_actual, y_pred_actual, metrics = train_and_evaluate_model(
         model=model,
@@ -77,7 +84,7 @@ def main():
         X_test=X_test,
         y_test=y_test,
         target_scaler=target_scaler,
-        epochs=30,
+        epochs=epochs,
         batch_size=32
     )
 

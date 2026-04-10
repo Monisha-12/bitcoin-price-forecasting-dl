@@ -17,7 +17,7 @@ def train_and_evaluate_model(
     X_test,
     y_test,
     target_scaler,
-    epochs=20,
+    epochs=50,
     batch_size=32
 ):
     early_stop = EarlyStopping(
@@ -30,7 +30,7 @@ def train_and_evaluate_model(
     X_train,
     y_train,
     validation_split=0.1,
-    epochs=30,
+    epochs=epochs,
     batch_size=batch_size,
     callbacks=[early_stop],
     verbose=1
@@ -61,7 +61,7 @@ def plot_loss_curve(history):
     plt.figure(figsize=(8, 5))
     plt.plot(history.history["loss"], label="Train Loss")
     plt.plot(history.history["val_loss"], label="Validation Loss")
-    plt.title("CNN Training Loss Curve")
+    plt.title("Training Loss Curve")
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
     plt.legend()

@@ -1,22 +1,21 @@
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import (
-    Dense,
     Conv1D,
     MaxPooling1D,
     Flatten,
+    Dense,
+    Dropout,
     SimpleRNN,
     LSTM,
-    Dropout,
-    GlobalAveragePooling1D,
     LayerNormalization,
     MultiHeadAttention,
+    GlobalAveragePooling1D,
+    Input,
 )
-from tensorflow.keras.layers import Dropout
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv1D, MaxPooling1D, Flatten, Dense, Dropout, SimpleRNN, LSTM
+from tensorflow.keras.models import Model
 
-# ================= CNN =================
+
 def build_cnn_model(input_shape, output_size):
     model = Sequential([
         Conv1D(64, 3, activation='relu', input_shape=input_shape),
@@ -30,15 +29,12 @@ def build_cnn_model(input_shape, output_size):
         Flatten(),
         Dense(64, activation='relu'),
         Dropout(0.2),
-
         Dense(output_size)
     ])
-
     model.compile(optimizer='adam', loss='mse')
     return model
 
 
-# ================= RNN =================
 def build_rnn_model(input_shape, output_size):
     model = Sequential([
         SimpleRNN(64, activation='tanh', input_shape=input_shape),
@@ -50,7 +46,6 @@ def build_rnn_model(input_shape, output_size):
     return model
 
 
-# ================= LSTM =================
 def build_lstm_model(input_shape, output_size):
     model = Sequential([
         LSTM(64, return_sequences=False, input_shape=input_shape),
@@ -62,28 +57,41 @@ def build_lstm_model(input_shape, output_size):
     return model
 
 
-# ================= Transformer =================
-def transformer_block(inputs, head_size, num_heads, ff_dim, dropout=0):
+def transformer_encoder(inputs, head_size, num_heads, ff_dim, dropout=0.2):
     x = LayerNormalization(epsilon=1e-6)(inputs)
-    x = MultiHeadAttention(key_dim=head_size, num_heads=num_heads)(x, x)
+    x = MultiHeadAttention(
+        key_dim=head_size,
+        num_heads=num_heads,
+        dropout=dropout
+    )(x, x)
     x = Dropout(dropout)(x)
     res = x + inputs
 
     x = LayerNormalization(epsilon=1e-6)(res)
     x = Dense(ff_dim, activation="relu")(x)
+    x = Dropout(dropout)(x)
     x = Dense(inputs.shape[-1])(x)
+
     return x + res
 
 
 def build_transformer_model(input_shape, output_size):
-    inputs = tf.keras.Input(shape=input_shape)
+    inputs = Input(shape=input_shape)
 
-    x = transformer_block(inputs, head_size=64, num_heads=2, ff_dim=64)
+    x = transformer_encoder(
+        inputs,
+        head_size=32,
+        num_heads=2,
+        ff_dim=64,
+        dropout=0.2
+    )
+
     x = GlobalAveragePooling1D()(x)
     x = Dense(64, activation="relu")(x)
+    x = Dropout(0.2)(x)
     outputs = Dense(output_size)(x)
 
-    model = tf.keras.Model(inputs, outputs)
-    model.compile(optimizer="adam", loss="mse")
+    model = Model(inputs, outputs)
+    model.compile(optimizer='adam', loss='mse')
 
     return model
